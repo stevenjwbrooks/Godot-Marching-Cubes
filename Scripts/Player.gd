@@ -30,7 +30,7 @@ func _process(delta):
 	handle_inputs(delta)
 	# Move
 	var velocity_local = Vector3(0, -curr_pitch_t * elevation_speed, speed)
-	translate_object_local(velocity_local * delta)
+	# ranslate_object_local(velocity_local * delta)
 	# Rotate
 	rotate(Vector3(0,-1,0), turn_speed * current_turn_t * delta)
 	# Rotate graphic
@@ -46,9 +46,10 @@ func _process(delta):
 	var up = basis.y.normalized()
 	var fwd = basis.z.normalized()
 	
-	camera.position = position + right * cam_offset.x + up * cam_offset.y + fwd * cam_offset.z
+	# TODO: Remove Camera from Script.
+	# camera.position = position + right * cam_offset.x + up * cam_offset.y + fwd * cam_offset.z
 	var cam_look_target = position + right * cam_look_offset.x + up * cam_look_offset.y + fwd * cam_look_offset.z
-	camera.look_at(cam_look_target)
+	# camera.look_at(cam_look_target)
 	
 func handle_inputs(dt):
 	# Input

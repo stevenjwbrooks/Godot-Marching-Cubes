@@ -19,6 +19,8 @@ const params_bind_index : int = 1
 const counter_bind_index : int = 2
 const lut_bind_index : int = 3
 
+const terrain_info_bind_index : int = 4
+
 # Compute stuff
 var rendering_device: RenderingDevice
 var shader : RID
@@ -29,6 +31,8 @@ var triangle_buffer : RID
 var params_buffer : RID
 var counter_buffer : RID
 var lut_buffer : RID
+
+var terrain_info_buffer : RID
 
 # Data received from compute shader
 var triangle_data_bytes
@@ -115,8 +119,15 @@ func init_compute():
 	lut_uniform.binding = lut_bind_index
 	lut_uniform.add_id(lut_buffer)
 	
+	var terrain_bytes = generateInitialTerrainData(64,64,64).to_byte_array()
+	terrain_info_buffer = rendering_device.storage_buffer_create(terrain_bytes.size(), terrain_bytes)
+	var terrain_uniform = RDUniform.new()
+	terrain_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
+	terrain_uniform.binding = terrain_info_bind_index
+	terrain_uniform.add_id(terrain_info_buffer)
+
 	# Create buffer setter and pipeline
-	var buffers = [triangle_uniform, params_uniform, counter_uniform, lut_uniform]
+	var buffers = [triangle_uniform, params_uniform, counter_uniform, lut_uniform, terrain_uniform]
 	buffer_set = rendering_device.uniform_set_create(buffers, shader, buffer_set_index)
 	pipeline = rendering_device.compute_pipeline_create(shader)
 	
@@ -224,6 +235,7 @@ func release():
 	rendering_device.free_rid(params_buffer)
 	rendering_device.free_rid(counter_buffer);
 	rendering_device.free_rid(lut_buffer);
+	rendering_device.free_rid(terrain_info_buffer);
 	rendering_device.free_rid(shader)
 	
 	pipeline = RID()
@@ -231,7 +243,23 @@ func release():
 	params_buffer = RID()
 	counter_buffer = RID()
 	lut_buffer = RID()
+	terrain_info_buffer = RID()
 	shader = RID()
 		
 	rendering_device.free()
 	rendering_device= null
+
+func generateInitialTerrainData(width,height,length):
+	var terrain_array = []
+	terrain_array.resize(width * height * length)
+	print("Terrain Size: ", width * height * length)
+	
+	for x in range(width):
+		for y in range(height):
+			for z in range(length):
+				if y <= 5:
+					terrain_array[x + (width * y) + (width * height * z)] = 0;
+				else: 
+					terrain_array[x + (width * y) + (width * height * z)] = 1;
+	
+	return PackedInt32Array(terrain_array);

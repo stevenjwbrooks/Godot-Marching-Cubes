@@ -148,8 +148,15 @@ layout(set = 0, binding = 3, std430) restrict buffer LutBuffer
 }
 lut;
 
+layout(set = 0, binding = 4, std430) restrict buffer TerrainBuffer
+{
+	int data[];
+}
+terrain;
+
 vec4 evaluate(vec3 coord)
 {   
+    // Make a vertex
 	float cellSize = 1.0 / params.numVoxelsPerAxis * params.scale;
 	float cx = int(params.posX / cellSize + 0.5 * sign(params.posX)) * cellSize;
 	float cy = int(params.posY / cellSize + 0.5 * sign(params.posY)) * cellSize;
@@ -158,6 +165,8 @@ vec4 evaluate(vec3 coord)
 
 	vec3 posNorm = coord / vec3(params.numVoxelsPerAxis) - vec3(0.5);
 	vec3 worldPos = posNorm * params.scale + centreSnapped;
+	
+    // Add Vertex Data from Noise
 	vec3 noiseOffset = vec3(params.noiseOffsetX, params.noiseOffsetY, params.noiseOffsetZ);
 	vec3 samplePos = (worldPos + noiseOffset) * params.noiseScale / params.scale;
 
@@ -178,7 +187,10 @@ vec4 evaluate(vec3 coord)
 	}
 	float density = sum;
 	density = -(worldPos.y+100)/300 + density;
-
+	
+	// Load Vertex Data from Terrain Data
+	// float density = terrain.data[coord.x];
+	
 	return vec4(worldPos, density);
 }
 
@@ -189,11 +201,23 @@ vec4 interpolateVerts(vec4 v1, vec4 v2, float isoLevel)
 	return v1 + t * (v2 - v1);
 }
 
+/*
+int getIndex(vec3 offset)
+{
+    return int(gl_LocalInvocationID.x + offset.x + 
+       gl_WorkGroupSize * gl_WorkGroupID.x * (gl_LocalInvocationID.y + offset.y) + 
+       gl_WorkGroupSize * gl_WorkGroupID.x * gl_WorkGroupSize * gl_WorkGroupID.y * (gl_LocalInvocationID.z + offset.z));
+}*/
+
+int getIndex(vec3 offset)
+{
+    return 1;
+}
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 void main()
 {
-	vec3 id = gl_GlobalInvocationID;
+	vec3 id = gl_GlobalInvocationID; // gl_LocalInvocationID + gl_WorkGroupID * gl_WorkGroupSize
 
 	// 8 corners of the current cube
 	vec4 cubeCorners[8] = {
@@ -255,6 +279,8 @@ void main()
 
 		uint index = atomicAdd(counter, 1u);
 		triangleBuffer.data[index] = currTri;
-		
 	}
+	
+	
+
 }
